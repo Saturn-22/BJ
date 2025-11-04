@@ -17,7 +17,8 @@ const userVaultAddress = USER_VAULT_ADDRESS;
 const blackjackAddress = BLACKJACK_ADDRESS;
 
 // API endpoint
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://127.0.0.1:5000';
+//const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://127.0.0.1:5000';
+const API_BASE_URL = https://blackjack-dptz.onrender.com;
 
 // --- Helper Functions ---
 
