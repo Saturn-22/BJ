@@ -1,0 +1,14 @@
+{
+    "devDependencies":  {
+                            "@nomicfoundation/hardhat-ethers":  "^3.1.0",
+                            "@nomicfoundation/hardhat-toolbox":  "^6.1.0",
+                            "@nomicfoundation/hardhat-verify":  "latest",
+                            "dotenv":  "^17.2.3",
+                            "ethers":  "^6.15.0",
+                            "hardhat":  "^2.26.0"
+                        },
+    "type":  "commonjs",
+    "dependencies":  {
+                         "react-router-dom":  "^7.9.4"
+                     }
+}

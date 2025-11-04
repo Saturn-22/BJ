@@ -1,0 +1,192 @@
+1	// SPDX-License-Identifier: UNLICENSED
+2	pragma solidity ^0.8.24;
+3	
+4	import "./interfaces/IUserVault.sol";
+5	
+6	contract Gomoku {
+7	    // UserVaultSystem 合约的接�?    IUserVault public userVault;
+8	
+9	    // 游戏状态枚�?    enum GameStatus { Lobby, InProgress, Finished }
+10	
+11	    // 单个游戏对局的数据结�?    struct Game {
+12	        uint gameId;
+13	        address[2] players; // players[0] 是创建�?(黑棋), players[1] 是加入�?(白棋)
+14	        address turn; // 当前轮到谁落�?        GameStatus status;
+15	        address winner;
+16	        uint256 stake; // 单边赌注金额 (总赌注为 stake * 2)
+17	        uint8[15][15] board; // 15x15 的棋�?        uint moveCount; // 总步数，用于判断平局
+18	    }
+19	
+20	    // 状态变�?    uint public gameCounter; // 全局游戏ID计数�?    mapping(uint => Game) public games; // 通过 gameId 查找游戏
+21	    mapping(address => uint) public playerCurrentGame; // 查找玩家当前所在的游戏ID
+22	
+23	    // 事件
+24	    event GameCreated(uint indexed gameId, address indexed player1, uint256 stake);
+25	    event GameStarted(uint indexed gameId, address indexed player1, address indexed player2);
+26	    event MoveMade(uint indexed gameId, address indexed player, uint x, uint y);
+27	    event GameEnded(uint indexed gameId, address indexed winner, address loser);
+28	    event GameDrawn(uint indexed gameId);
+29	
+30	    constructor(address _userVaultAddress) {
+31	        userVault = IUserVault(_userVaultAddress);
+32	    }
+33	
+34	    function createGame(uint256 _stake) external {
+35	        require(_stake > 0, "Stake must be greater than 0");
+36	        require(playerCurrentGame[msg.sender] == 0, "Player is already in a game");
+37	
+38	        userVault.transfer(msg.sender, address(this), _stake);
+39	
+40	        gameCounter++;
+41	        uint newGameId = gameCounter;
+42	
+43	        Game storage newGame = games[newGameId];
+44	        newGame.gameId = newGameId;
+45	        newGame.players[0] = msg.sender;
+46	        newGame.stake = _stake;
+47	        newGame.status = GameStatus.Lobby;
+48	
+49	        playerCurrentGame[msg.sender] = newGameId;
+50	
+51	        emit GameCreated(newGameId, msg.sender, _stake);
+52	    }
+53	
+54	    function joinGame(uint _gameId) external {
+55	        Game storage game = games[_gameId];
+56	        require(game.gameId != 0, "Game does not exist");
+57	        require(game.status == GameStatus.Lobby, "Game is not in Lobby state");
+58	        require(msg.sender != game.players[0], "Cannot join your own game");
+59	        require(playerCurrentGame[msg.sender] == 0, "Player is already in a game");
+60	
+61	        userVault.transfer(msg.sender, address(this), game.stake);
+62	        userVault.freezeUser(game.players[0]);
+63	        userVault.freezeUser(msg.sender);
+64	
+65	        game.players[1] = msg.sender;
+66	        game.status = GameStatus.InProgress;
+67	        game.turn = game.players[0];
+68	
+69	        playerCurrentGame[msg.sender] = _gameId;
+70	
+71	        emit GameStarted(_gameId, game.players[0], msg.sender);
+72	    }
+73	
+74	    function makeMove(uint _gameId, uint _x, uint _y) external {
+75	        Game storage game = games[_gameId];
+76	        require(game.status == GameStatus.InProgress, "Game is not in progress");
+77	        require(msg.sender == game.turn, "Not your turn");
+78	        require(_x < 15 && _y < 15, "Invalid coordinates");
+79	        require(game.board[_x][_y] == 0, "Cell is not empty");
+80	
+81	        uint8 playerPiece = (msg.sender == game.players[0]) ? 1 : 2;
+82	        game.board[_x][_y] = playerPiece;
+83	        game.moveCount++;
+84	
+85	        emit MoveMade(_gameId, msg.sender, _x, _y);
+86	
+87	        if (_checkWin(_gameId, _x, _y)) {
+88	            _endGame(_gameId, msg.sender);
+89	        } else if (game.moveCount == 15 * 15) {
+90	            _endGameDraw(_gameId);
+91	        } else {
+92	            game.turn = (msg.sender == game.players[0]) ? game.players[1] : game.players[0];
+93	        }
+94	    }
+95	
+96	    function _checkWin(uint _gameId, uint _x, uint _y) internal view returns (bool) {
+97	        Game storage game = games[_gameId];
+98	        uint8 playerPiece = game.board[_x][_y];
+99	
+100	        // Directions: horizontal, vertical, diagonal (down-right), diagonal (up-right)
+101	        int8[2] memory d;
+102	
+103	        // horizontal
+104	        d = [int8(0), int8(1)];
+105	        if (checkOneDirection(_gameId, _x, _y, playerPiece, d)) return true;
+106	
+107	        // vertical
+108	        d = [int8(1), int8(0)];
+109	        if (checkOneDirection(_gameId, _x, _y, playerPiece, d)) return true;
+110	
+111	        // diagonal (down-right)
+112	        d = [int8(1), int8(1)];
+113	        if (checkOneDirection(_gameId, _x, _y, playerPiece, d)) return true;
+114	
+115	        // diagonal (up-right)
+116	        d = [int8(1), int8(-1)];
+117	        if (checkOneDirection(_gameId, _x, _y, playerPiece, d)) return true;
+118	        
+119	        return false;
+120	    }
+121	
+122	    function checkOneDirection(uint _gameId, uint _x, uint _y, uint8 playerPiece, int8[2] memory direction) internal view returns (bool) {
+123	        Game storage game = games[_gameId];
+124	        uint count = 1;
+125	        // Check in one direction
+126	        for (uint j = 1; j < 5; j++) {
+127	            int nextX = int(_x) + int(direction[0]) * int(j);
+128	            int nextY = int(_y) + int(direction[1]) * int(j);
+129	            if (nextX >= 0 && nextX < 15 && nextY >= 0 && nextY < 15 && game.board[uint(nextX)][uint(nextY)] == playerPiece) {
+130	                count++;
+131	            } else {
+132	                break;
+133	            }
+134	        }
+135	        // Check in the opposite direction
+136	        for (uint j = 1; j < 5; j++) {
+137	            int nextX = int(_x) - int(direction[0]) * int(j);
+138	            int nextY = int(_y) - int(direction[1]) * int(j);
+139	            if (nextX >= 0 && nextX < 15 && nextY >= 0 && nextY < 15 && game.board[uint(nextX)][uint(nextY)] == playerPiece) {
+140	                count++;
+141	            } else {
+142	                break;
+143	            }
+144	        }
+145	        return count >= 5;
+146	    }
+147	
+148	    function _endGame(uint _gameId, address _winner) internal {
+149	        Game storage game = games[_gameId];
+150	        game.status = GameStatus.Finished;
+151	        game.winner = _winner;
+152	
+153	        address loser = (_winner == game.players[0]) ? game.players[1] : game.players[0];
+154	
+155	        userVault.transfer(address(this), _winner, game.stake * 2);
+156	        userVault.unfreezeUser(game.players[0]);
+157	        userVault.unfreezeUser(game.players[1]);
+158	
+159	        delete playerCurrentGame[game.players[0]];
+160	        delete playerCurrentGame[game.players[1]];
+161	
+162	        emit GameEnded(_gameId, _winner, loser);
+163	    }
+164	
+165	    function _endGameDraw(uint _gameId) internal {
+166	        Game storage game = games[_gameId];
+167	        game.status = GameStatus.Finished;
+168	
+169	        userVault.transfer(address(this), game.players[0], game.stake);
+170	        userVault.transfer(address(this), game.players[1], game.stake);
+171	        userVault.unfreezeUser(game.players[0]);
+172	        userVault.unfreezeUser(game.players[1]);
+173	
+174	        delete playerCurrentGame[game.players[0]];
+175	        delete playerCurrentGame[game.players[1]];
+176	
+177	        emit GameDrawn(_gameId);
+178	    }
+179	
+180	    function getGameDetails(uint _gameId) external view returns (Game memory) {
+181	        return games[_gameId];
+182	    }
+183	
+184	    function getBoard(uint _gameId) external view returns (uint8[15][15] memory) {
+185	        return games[_gameId].board;
+186	    }
+187	
+188	    // --- Debug ---
+189	    function _setMoveCount(uint _gameId, uint _count) external {
+190	        games[_gameId].moveCount = _count;
+191	    }
+192	}

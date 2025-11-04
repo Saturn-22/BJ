@@ -1,0 +1,12 @@
+{
+  "network": "sepolia",
+  "chainId": 11155111,
+  "deployer": "0x6E5035d015f885c434388f581c13bC5A4F0E1Db1",
+  "timestamp": "2025-11-03T13:34:51.089Z",
+  "contracts": {
+    "UserVaultSystem": "0xf2c35020CDD3692387E05a214B9e2615b5848A67",
+    "BlackjackSettlement": "0xd2435D06C3689104d1DD8829072052B2BFf58d7B"
+  },
+  "blockNumber": 9551914,
+  "gasUsed": "Estimated during deployment"
+}

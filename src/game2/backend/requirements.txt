@@ -1,0 +1,5 @@
+flask
+flask-cors
+web3
+python-dotenv
+eth-hash

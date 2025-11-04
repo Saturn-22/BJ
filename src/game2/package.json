@@ -1,0 +1,22 @@
+{
+  "name": "blackjack-contracts",
+  "version": "1.0.0",
+  "description": "Blackjack smart contracts and backend",
+  "scripts": {
+    "node": "hardhat node",
+    "deploy:local": "hardhat run scripts/deploy_all.js --network localhost",
+    "deploy:sepolia": "hardhat run scripts/deploy_all.js --network sepolia",
+    "test": "hardhat test",
+    "compile": "hardhat compile",
+    "clean": "hardhat clean",
+    "backend": "cd backend && python blackjack.py"
+  },
+  "keywords": ["blackjack", "ethereum", "smart-contracts"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "hardhat": "^2.19.0",
+    "dotenv": "^16.3.1"
+  }
+}
