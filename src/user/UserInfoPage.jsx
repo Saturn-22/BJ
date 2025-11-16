@@ -1,18 +1,14 @@
 ﻿import React, { useState, useEffect } from "react";
 import { ethers } from "ethers";
-// 绉婚櫎鏃х殑鍚堢害瀵煎叆
-// import { UserVaultABI } from "../contract/contractABI";
-// import { CONTRACT_ADDRESS } from "../contract/contractConfig";
+
 import { userInfoBg } from "../backgroundImage";
 
-// 瀵煎叆鏂扮殑鍚堢害鏈嶅姟
 import { initEthers, getContracts } from "../contract/contractService";
 
 const UserInfoPage = ({ userInfo, onBack, onChangePassword, onLogout, onRecharge, onWithdraw }) => {
   const [loggingOut, setLoggingOut] = useState(false);
   const [currentUserInfo, setCurrentUserInfo] = useState(userInfo);
 
-  // 浣跨敤 useEffect 鍒锋柊鐢ㄦ埛淇℃伅
   useEffect(() => {
     const fetchUserInfo = async () => {
       try {
@@ -30,18 +26,17 @@ const UserInfoPage = ({ userInfo, onBack, onChangePassword, onLogout, onRecharge
     fetchUserInfo();
   }, []);
 
-
   const handleLogout = async () => {
     try {
       setLoggingOut(true);
       const { userVaultContract } = getContracts();
       const tx = await userVaultContract.logout();
       await tx.wait();
-      alert("鉁?Logged out");
+      alert("✅ Logged out");
       onLogout?.();
     } catch (err) {
       console.error(err);
-      alert("鉂?Logout failed: " + (err.reason || err.message));
+      alert("❌ Logout failed: " + (err.reason || err.message));
     } finally {
       setLoggingOut(false);
     }
@@ -49,13 +44,14 @@ const UserInfoPage = ({ userInfo, onBack, onChangePassword, onLogout, onRecharge
 
   return (
     <div style={styles.container}>
-      <button style={styles.backButton} onClick={onBack}>猬?Back</button>
+      <button style={styles.backButton} onClick={onBack}>Back</button>
 
-      <h2>User Information</h2>
+      <h2 style={styles.title}>User Information</h2>
+      
       <div style={styles.infoBox}>
         <div><strong>Username:</strong> {currentUserInfo.username}</div>
         <div><strong>Balance:</strong> {ethers.formatEther(currentUserInfo.balance || "0")} ETH</div>
-        <div><strong>Status:</strong> {currentUserInfo.frozen ? "鉂?Frozen" : "鉁?Active"}</div>
+        <div><strong>Status:</strong> {currentUserInfo.frozen ? "❌ Frozen" : "✅ Active"}</div>
       </div>
 
       <div style={styles.buttonGroup}>
@@ -97,14 +93,24 @@ const styles = {
     color: "#fff",
     cursor: "pointer",
   },
+  title: {
+    color: "#000",
+    fontSize: "24px", 
+    fontWeight: "bold", 
+    marginTop: "40px", 
+  },
   infoBox: {
     margin: "20px auto",
-    padding: "15px",
+    padding: "20px",
     borderRadius: "8px",
-    backgroundColor: "#fff",
-    boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
-    width: "300px",
+    backgroundColor: "#fff", 
+    color: "#000", 
+    boxShadow: "0 2px 10px rgba(0,0,0,0.15)", 
+    width: "320px",
     textAlign: "left",
+    fontSize: "16px",
+    fontFamily: "Arial, sans-serif",
+    lineHeight: "1.8",
   },
   buttonGroup: {
     marginTop: "30px",
@@ -126,4 +132,3 @@ const styles = {
 };
 
 export default UserInfoPage;
-
