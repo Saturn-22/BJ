@@ -1,11 +1,7 @@
 import React, { useState } from "react";
-import { ethers } from "ethers"; // 保留 ethers 用于 parseEther
-// 移除旧的合约导入
-// import { UserVaultABI } from "../contract/contractABI";
-// import { CONTRACT_ADDRESS } from "../contract/contractConfig";
+import { ethers } from "ethers"; 
 import { withdrawBg } from "../backgroundImage";
 
-// 导入新的合约服务
 import { initEthers } from "../contract/contractService";
 
 const WithdrawPage = ({ onBack, onSubmit }) => {
@@ -20,10 +16,8 @@ const WithdrawPage = ({ onBack, onSubmit }) => {
     
     try {
       setLoading(true);
-      // 使用新的服务获取合约实例
       const { userVaultContract } = await initEthers();
 
-      // 调用 withdraw 函数，并使用 ethers v6 的方法
       const tx = await userVaultContract.withdraw(ethers.parseEther(String(amount)));
       await tx.wait();
 
@@ -39,7 +33,7 @@ const WithdrawPage = ({ onBack, onSubmit }) => {
 
   return (
     <div style={styles.container}>
-      <h2>Withdraw</h2>
+      <h2 style={{ color: 'black' }}>Withdraw</h2>
       <input
         type="number"
         placeholder="Enter withdraw amount"
@@ -97,5 +91,3 @@ const styles = {
 };
 
 export default WithdrawPage;
-
-
