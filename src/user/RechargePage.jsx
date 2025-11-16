@@ -1,11 +1,7 @@
 import React, { useState } from "react";
-import { ethers } from "ethers"; // 保留 ethers 用于 parseEther
-// 移除旧的合约导入
-// import { UserVaultABI } from "../contract/contractABI";
-// import { CONTRACT_ADDRESS } from "../contract/contractConfig";
+import { ethers } from "ethers"; 
 import { rechargeBg } from "../backgroundImage";
 
-// 导入新的合约服务
 import { initEthers } from "../contract/contractService";
 
 const RechargePage = ({ onBack, onSubmit }) => {
@@ -20,10 +16,8 @@ const RechargePage = ({ onBack, onSubmit }) => {
 
     try {
       setLoading(true);
-      // 使用新的服务获取合约实例
       const { userVaultContract } = await initEthers();
 
-      // 调用 deposit 函数，并使用 ethers v6 的方法
       const tx = await userVaultContract.deposit({ value: ethers.parseEther(String(amount)) });
       await tx.wait();
 
@@ -39,7 +33,7 @@ const RechargePage = ({ onBack, onSubmit }) => {
 
   return (
     <div style={styles.container}>
-      <h2>Recharge</h2>
+      <h2 style={{ color: 'black' }}>Recharge</h2>
       <input
         type="number"
         placeholder="Enter amount"
