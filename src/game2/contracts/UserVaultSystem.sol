@@ -70,7 +70,6 @@ contract UserVaultSystem {
     function registerUser(string calldata username, string calldata password) external {
         require(!users[msg.sender].exists, "User already registered");
         require(bytes(username).length > 0, "Username cannot be empty");
-        require(bytes(password).length > 3, "Password must be at least 4 characters");
         
         bytes32 hashedPassword = keccak256(abi.encodePacked(password));
 

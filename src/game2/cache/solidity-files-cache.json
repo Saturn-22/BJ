@@ -40,8 +40,8 @@
       ]
     },
     "C:\\Users\\KYR\\Desktop\\EE4032-0.1.5\\src\\game2\\contracts\\UserVaultSystem.sol": {
-      "lastModificationDate": 1762165792646,
-      "contentHash": "e2652b6214d2d57f907e802e15a2d57e",
+      "lastModificationDate": 1763290444982,
+      "contentHash": "001e7dd79359b7d629861abf5e4a8487",
       "sourceName": "contracts/UserVaultSystem.sol",
       "solcConfig": {
         "version": "0.8.20",
