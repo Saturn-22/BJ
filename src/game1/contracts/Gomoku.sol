@@ -1,11 +1,16 @@
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.24;
+pragma solidity >=0.7.0 <0.9.0;
 
-import "./interfaces/IUserVault.sol";
+import "./IUserVault.sol";
 
 contract Gomoku {
     // UserVaultSystem 合约的接口
     IUserVault public userVault;
+
+    // 合约部署者（用于 Debug 函数权限控制）
+    address public owner;
+
+    // 超时常量：每步棋的时间限制
+    uint public constant TURN_TIMEOUT = 90 seconds;
 
     // 游戏状态枚举
     enum GameStatus { Lobby, InProgress, Finished }
@@ -20,6 +25,7 @@ contract Gomoku {
         uint256 stake; // 单边赌注金额 (总赌注为 stake * 2)
         uint8[15][15] board; // 15x15 的棋盘
         uint moveCount; // 总步数，用于判断平局
+        uint lastMoveTimestamp; // 上一次落子或游戏开始的时间戳
     }
 
     // 状态变量
@@ -34,15 +40,21 @@ contract Gomoku {
     event GameEnded(uint indexed gameId, address indexed winner, address loser);
     event GameDrawn(uint indexed gameId);
 
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only owner can call this function");
+        _;
+    }
+
     constructor(address _userVaultAddress) {
         userVault = IUserVault(_userVaultAddress);
+        owner = msg.sender;
     }
 
     function createGame(uint256 _stake) external {
         require(_stake > 0, "Stake must be greater than 0");
         require(playerCurrentGame[msg.sender] == 0, "Player is already in a game");
-
-        userVault.transfer(msg.sender, address(this), _stake);
+        // 注意：用户需要先调用 UserVaultSystem.pushToPool(_stake) 将资金存入公共池
+        userVault.pushToPool(msg.sender,_stake);
 
         gameCounter++;
         uint newGameId = gameCounter;
@@ -64,14 +76,20 @@ contract Gomoku {
         require(game.status == GameStatus.Lobby, "Game is not in Lobby state");
         require(msg.sender != game.players[0], "Cannot join your own game");
         require(playerCurrentGame[msg.sender] == 0, "Player is already in a game");
+        // 注意：用户需要先调用 UserVaultSystem.pushToPool(game.stake) 将资金存入公共池
+        userVault.pushToPool(msg.sender,game.stake);
 
-        userVault.transfer(msg.sender, address(this), game.stake);
-        userVault.freezeUser(game.players[0]);
-        userVault.freezeUser(msg.sender);
+        // 健壮性检查：确保公共池有足够资金用于本局结算
+        uint256 requiredPoolBalance = game.stake * 2;
+        require(
+            userVault.gamePoolBalance() >= requiredPoolBalance,
+            "Insufficient pool balance for this game"
+        );
 
         game.players[1] = msg.sender;
         game.status = GameStatus.InProgress;
-        game.turn = game.players[0];
+        game.turn = game.players[0]; // 黑棋（创建者）先手
+        game.lastMoveTimestamp = block.timestamp; // 游戏开始，启动计时器
 
         playerCurrentGame[msg.sender] = _gameId;
 
@@ -88,6 +106,7 @@ contract Gomoku {
         uint8 playerPiece = (msg.sender == game.players[0]) ? 1 : 2;
         game.board[_x][_y] = playerPiece;
         game.moveCount++;
+        game.lastMoveTimestamp = block.timestamp; // 每次落子，重置计时器
 
         emit MoveMade(_gameId, msg.sender, _x, _y);
 
@@ -154,32 +173,34 @@ contract Gomoku {
 
     function _endGame(uint _gameId, address _winner) internal {
         Game storage game = games[_gameId];
-        game.status = GameStatus.Finished;
-        game.winner = _winner;
+        require(game.status == GameStatus.InProgress, "Game not in progress");
 
         address loser = (_winner == game.players[0]) ? game.players[1] : game.players[0];
 
-        userVault.transfer(address(this), _winner, game.stake * 2);
-        userVault.unfreezeUser(game.players[0]);
-        userVault.unfreezeUser(game.players[1]);
-
+        // 状态更新（Effects）
+        game.status = GameStatus.Finished;
+        game.winner = _winner;
         delete playerCurrentGame[game.players[0]];
         delete playerCurrentGame[game.players[1]];
+
+        // 外部交互（Interactions）- 遵循 CEI 模式
+        userVault.scoopFromPool(_winner, game.stake * 2);
 
         emit GameEnded(_gameId, _winner, loser);
     }
 
     function _endGameDraw(uint _gameId) internal {
         Game storage game = games[_gameId];
+        require(game.status == GameStatus.InProgress, "Game not in progress");
+
+        // 状态更新（Effects）
         game.status = GameStatus.Finished;
-
-        userVault.transfer(address(this), game.players[0], game.stake);
-        userVault.transfer(address(this), game.players[1], game.stake);
-        userVault.unfreezeUser(game.players[0]);
-        userVault.unfreezeUser(game.players[1]);
-
         delete playerCurrentGame[game.players[0]];
         delete playerCurrentGame[game.players[1]];
+
+        // 外部交互（Interactions）- 遵循 CEI 模式
+        userVault.scoopFromPool(game.players[0], game.stake);
+        userVault.scoopFromPool(game.players[1], game.stake);
 
         emit GameDrawn(_gameId);
     }
@@ -192,8 +213,49 @@ contract Gomoku {
         return games[_gameId].board;
     }
 
-    // --- Debug ---
-    function _setMoveCount(uint _gameId, uint _count) external {
+    // --- 超时判负 ---
+    function claimWinByTimeout(uint _gameId) external {
+        Game storage game = games[_gameId];
+        require(game.status == GameStatus.InProgress, "Game is not in progress");
+        require(block.timestamp > game.lastMoveTimestamp + TURN_TIMEOUT, "Turn timeout not yet reached");
+        
+        address loser = game.turn;
+        address winner = (loser == game.players[0]) ? game.players[1] : game.players[0];
+        
+        require(msg.sender == winner, "Only the opponent can claim win by timeout");
+        
+        _endGame(_gameId, winner);
+    }
+
+    // --- 认输 ---
+    function forfeit(uint _gameId) external {
+        Game storage game = games[_gameId];
+        require(game.status == GameStatus.InProgress, "Game is not in progress");
+        
+        address loser = msg.sender;
+        require(loser == game.players[0] || loser == game.players[1], "You are not a player in this game");
+        
+        address winner = (loser == game.players[0]) ? game.players[1] : game.players[0];
+        
+        _endGame(_gameId, winner);
+    }
+
+    // --- 取消游戏（仅在 Lobby 状态下，且仅创建者可调用）---
+    function cancelGame(uint _gameId) external {
+        Game storage game = games[_gameId];
+        require(game.status == GameStatus.Lobby, "Game is not in lobby state");
+        require(msg.sender == game.players[0], "Only the creator can cancel the game");
+
+        // 状态更新
+        game.status = GameStatus.Finished;
+        delete playerCurrentGame[game.players[0]];
+        
+        // 将创建者已质押的赌注从池中退还
+        userVault.scoopFromPool(game.players[0], game.stake);
+    }
+
+    // --- Debug 函数（仅用于测试，生产环境应移除或限制权限）---
+    function _setMoveCount(uint _gameId, uint _count) external onlyOwner {
         games[_gameId].moveCount = _count;
     }
 }
