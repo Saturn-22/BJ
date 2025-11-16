@@ -18,7 +18,7 @@ const GamePage = ({ onBack, onSelectGame1, onSelectGame2 }) => {
             style={styles.gameButton} 
             onClick={() => handleButtonClick(1)}
           >
-            1
+            Gomoku
           </button>
         </div>
         <div style={styles.divider}></div>
@@ -28,7 +28,7 @@ const GamePage = ({ onBack, onSelectGame1, onSelectGame2 }) => {
             style={styles.gameButton} 
             onClick={() => handleButtonClick(2)}
           >
-            2
+            BlackJack
           </button>
         </div>
       </div>
@@ -120,7 +120,7 @@ const styles = {
     backgroundColor: "#007bff",
     color: "#fff",
     cursor: "pointer",
-    width: "120px",
+    width: "160px",
     height: "120px",
   },
 };
