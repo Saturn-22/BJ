@@ -1,14 +1,10 @@
 import React, { useState } from "react";
-// 移除旧的 ethers 和合约导入
-// import { ethers } from "ethers";  
-// import { UserVaultABI } from "../contract/contractABI";
-// import { CONTRACT_ADDRESS } from "../contract/contractConfig";
+
 import { loginBg } from "../backgroundImage";
 
-// 导入新的合约服务
 import { initEthers } from "../contract/contractService";
 
-const LoginPage = ({ onBack, onLoginSuccess }) => { // 将 onLogin 改回 onLoginSuccess
+const LoginPage = ({ onBack, onLoginSuccess }) => { 
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -18,16 +14,13 @@ const LoginPage = ({ onBack, onLoginSuccess }) => { // 将 onLogin 改回 onLogi
       setLoading(true);
       setErrorMsg("");
 
-      // 1. 使用新的服务来获取合约实例和 signer
       const { userVaultContract, signer } = await initEthers();
 
-      // 2. 调用合约的 login 函数
       const tx = await userVaultContract.login(password);
-      await tx.wait(); // 等待交易被打包
+      await tx.wait();
 
       alert("Login successful!");
       
-      // 3. 登录成功后，调用 onLoginSuccess 回调并传递用户地址
       const userAddress = await signer.getAddress();
       onLoginSuccess(userAddress);
 
