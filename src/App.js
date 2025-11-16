@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Route, Routes, Navigate, useNavigate } from 'react-router-dom';
+// import { BrowserRouter as Router, Route, Routes, Navigate, useNavigate } from 'react-router-dom';
+import { HashRouter as Router, Route, Routes, Navigate, useNavigate } from 'react-router-dom';
+
 import LoggedOutHome from './LoggedOutHome';
 import LoggedInHome from './LoggedInHome';
 import LoginPage from './login/LoginPage';
@@ -23,7 +25,6 @@ const AppContent = () => {
     const [userInfo, setUserInfo] = useState(null);
     const navigate = useNavigate();
 
-    // 在应用加载时检查登录状态和网络
     useEffect(() => {
         const initialize = async () => {
             if (window.ethereum) {
@@ -55,13 +56,11 @@ const AppContent = () => {
 
         initialize();
 
-        // 监听账户切换事件
         const handleAccountsChanged = (accounts) => {
             if (accounts.length === 0) {
                 handleLogout();
             } else {
                 setUserAddress(accounts[0]);
-                // 如果需要，可以在这里重新获取用户信息
             }
         };
 
@@ -76,7 +75,6 @@ const AppContent = () => {
         };
     }, []);
 
-    // 登录成功后的处理
     const handleLoginSuccess = async (address) => {
         try {
             const { userVaultContract } = getContracts();
@@ -94,7 +92,6 @@ const AppContent = () => {
         }
     };
     
-    // 登出处理
     const handleLogout = () => {
         setIsLoggedIn(false);
         setUserAddress('');
@@ -178,11 +175,9 @@ const AppContent = () => {
 
 const App = () => {
     return (
-        // #blackjack 
-        //<Router basename={process.env.NODE_ENV === 'production' ? '/ee4032_frontend' : '/'}>
-        <Router basename={process.env.NODE_ENV === 'production' ? '/blackjack' : '/'}>  
-            <AppContent />
-        </Router>
+        <Router>
+        <AppContent />
+      </Router>
     );
 }
 
