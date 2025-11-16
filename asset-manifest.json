@@ -1,0 +1,24 @@
+{
+  "files": {
+    "main.css": "/BJ/static/css/main.4717fb84.css",
+    "main.js": "/BJ/static/js/main.db2d63c1.js",
+    "static/js/453.201a1766.chunk.js": "/BJ/static/js/453.201a1766.chunk.js",
+    "static/media/userInfo.jpeg": "/BJ/static/media/userInfo.31ec24ac0b5d7cd081c4.jpeg",
+    "static/media/register.jpeg": "/BJ/static/media/register.7682d2665721693829f8.jpeg",
+    "static/media/withdraw.jpeg": "/BJ/static/media/withdraw.288dc1823eb3a9c3168e.jpeg",
+    "static/media/recharge.jpeg": "/BJ/static/media/recharge.3b14cba11b4f4e24d247.jpeg",
+    "static/media/changePassword.jpeg": "/BJ/static/media/changePassword.adb3f4744dfc2e7d00dd.jpeg",
+    "static/media/login.jpeg": "/BJ/static/media/login.ba8798b8bf5dbeccfa4b.jpeg",
+    "static/media/game2.jpeg": "/BJ/static/media/game2.ad93d58227cb348631df.jpeg",
+    "static/media/homepage.jpeg": "/BJ/static/media/homepage.82b447e4d2cf1df561f2.jpeg",
+    "static/media/game1.jpeg": "/BJ/static/media/game1.dc220a437c8f3b04ba3e.jpeg",
+    "index.html": "/BJ/index.html",
+    "main.4717fb84.css.map": "/BJ/static/css/main.4717fb84.css.map",
+    "main.db2d63c1.js.map": "/BJ/static/js/main.db2d63c1.js.map",
+    "453.201a1766.chunk.js.map": "/BJ/static/js/453.201a1766.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.4717fb84.css",
+    "static/js/main.db2d63c1.js"
+  ]
+}
