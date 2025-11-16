@@ -1,11 +1,7 @@
 import React, { useState } from "react";
-// 移除旧的 ethers 和合约导入
-// import { ethers } from "ethers";
-// import { UserVaultABI } from "../contract/contractABI";
-// import { CONTRACT_ADDRESS } from "../contract/contractConfig";
+
 import { registerBg } from "../backgroundImage";
 
-// 导入新的合约服务
 import { initEthers } from "../contract/contractService";
 
 function RegisterPage({ onBack, onRegisterSuccess }) {
@@ -15,7 +11,7 @@ function RegisterPage({ onBack, onRegisterSuccess }) {
   const [message, setMessage] = useState("");
 
   const handleRegister = async () => {
-    setMessage(""); // Clear previous message
+    setMessage(""); 
 
     if (!username || !password || !confirmPassword) {
       setMessage("Please fill in all fields");
@@ -28,23 +24,19 @@ function RegisterPage({ onBack, onRegisterSuccess }) {
     }
 
     try {
-      // 使用新的合约服务来初始化连接并获取合约实例
       const { userVaultContract } = await initEthers();
 
-      // Call registration function
       const tx = await userVaultContract.registerUser(username, password);
       setMessage("Transaction sent, waiting for block confirmation...");
-      await tx.wait(); // Wait for block confirmation
+      await tx.wait(); 
       setMessage("Registration successful!");
       
-      // Call callback after successful registration
       setTimeout(() => {
         onRegisterSuccess?.();
-      }, 1500); // Delay 1.5 seconds to let user see success message
+      }, 1500); 
     } catch (err) {
       console.error(err);
 
-      // 错误处理逻辑保持不变
       let errorMsg = err?.data?.message || err?.reason || err?.message || "Registration failed";
       if (errorMsg.includes("User already registered")) {
         setMessage("You have already registered with this address");
