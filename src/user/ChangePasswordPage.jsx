@@ -1,11 +1,6 @@
 import React, { useState } from "react";
-// 移除旧的合约导入
-// import { ethers } from "ethers";
-// import { UserVaultABI } from "../contract/contractABI";
-// import { CONTRACT_ADDRESS } from "../contract/contractConfig";
 import { changePasswordBg } from "../backgroundImage";
 
-// 导入新的合约服务
 import { initEthers } from "../contract/contractService";
 
 const ChangePasswordPage = ({ onBack }) => {
@@ -25,7 +20,6 @@ const ChangePasswordPage = ({ onBack }) => {
       setLoading(true);
       setMessage("");
 
-      // 使用新的服务获取合约实例
       const { userVaultContract } = await initEthers();
 
       const tx = await userVaultContract.changePassword(oldPassword, newPassword);
@@ -45,13 +39,14 @@ const ChangePasswordPage = ({ onBack }) => {
 
   return (
     <div style={styles.container}>
-      <h2>Change Password</h2>
+      <h2 style={{ color: 'black' }}>Change Password</h2>
       <input
         type="password"
         placeholder="Current password"
         value={oldPassword}
         onChange={(e) => setOldPassword(e.target.value)}
-        style={styles.input}
+        style={styles.input} 
+        
       />
       <input
         type="password"
@@ -99,6 +94,7 @@ const styles = {
     padding: "8px",
     fontSize: "16px",
     width: "250px",
+    color:"black",
   },
   button: {
     padding: "10px 20px",
